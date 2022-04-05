@@ -1,6 +1,7 @@
 pub type ClientId = u16;
 pub type TransactionId = u32;
 
+/// Possible types of transactions
 #[derive(Debug, Copy, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum TransactionType {
@@ -11,31 +12,36 @@ pub enum TransactionType {
     Chargeback,
 }
 
+/// Model of a single transaction
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Transaction {
+    // Tbh I dislike having type as a field here instead of a Transaction being enclosed
+    // in an enum, however csv-rs doesn't support reading internally tagged enums
     pub r#type: TransactionType,
     pub client: ClientId,
     pub tx: TransactionId,
     pub amount: Amount,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+/// A new-type over f64 that ensures reading/writing amounts with 4 dec digits precision
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct Amount(#[serde(with = "serde_amount")] pub f64);
 
-impl std::ops::Deref for Amount {
-    type Target = f64;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
+// Helper impl to make working with `Amount`s a bit nicer
+impl std::ops::AddAssign for Amount {
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
     }
 }
 
-impl std::ops::DerefMut for Amount {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+// Helper impl to make working with `Amount`s a bit nicer
+impl std::ops::SubAssign for Amount {
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 -= rhs.0;
     }
 }
 
+/// A module for serialize/deserialize functions used to meet contract of decimal digits precision
 mod serde_amount {
     use serde::{Deserialize, Deserializer, Serializer};
 
