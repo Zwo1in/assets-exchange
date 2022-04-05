@@ -38,19 +38,7 @@ Error handling is done with Rust's builtin arsenal of Error trait and Result typ
 All errors encountered during transaction processing are treated as warnings, displayed on
 program's stderr without suspending execution.
 
-
-## Some doubts :)
-
-The `amount` field doesn't make sense for `dispute`, `resolve` and `chargeback`. It'd be nice to be
-able not to provide it in csv input, like
-
-```
-type,    client, tx, amount
-deposit, 1,      1,  5.0
-dispute, 1,      1
-```
-
-However due to the fact that `serde` is not the best friend of `csv` format it couldn't be possible
-without a manual deserialization implementations. Usage of `serde` and `csv` with out of the box
-behaviour feels so convenient that this case wasn't handled and amounts are required in csv for all
-transactions.
+There are some fatal errors that can happen during execution. Errors encountered while parsing
+input file are treated like so, so if for some reason the input file cannot be parsed as a valid
+UTF8, or some fields of transactions are invalid (eg. amount 'abc'), then the program stops
+execution.
